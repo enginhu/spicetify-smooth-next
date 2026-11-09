@@ -21,7 +21,15 @@ Spotify Connect commands and operating-system commands that bypass Spotify's Jav
 
 ## Install
 
-Download `smooth-next-1.3.0.zip` from [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases/latest) and extract it. On macOS/Linux, open a terminal in the extracted folder:
+### Spicetify Marketplace
+
+Open **Marketplace → Extensions** in Spotify, search for **Smooth Next**, and install the entry by **enginhu**. Reload Spotify if Marketplace prompts you to do so.
+
+Marketplace installs the main JavaScript extension. For the SDCX knob or optional GMMK3 Fn+F5/Fn+F6 profile, also install the [macOS companion](macos/README.md) from the release ZIP. Marketplace cannot install that native helper.
+
+### ZIP or manual installation
+
+Download `smooth-next-1.3.1.zip` from [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases/latest) and extract it. On macOS/Linux, open a terminal in the extracted folder:
 
 ```sh
 bash install.sh

@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.3.1 — 2026-11-09
 
 - Standardize documentation, installer output, notifications, and menu labels on English.
 - Remove the Turkish guides, add an English macOS companion guide, and update documentation links and ZIP contents.
+- Prepare Marketplace distribution of the main extension and document the separate macOS companion installation.
 
 ## 1.3.0 — 2026-11-09
 
