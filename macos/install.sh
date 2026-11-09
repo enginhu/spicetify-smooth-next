@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "$#" -gt 1 || ( "$#" -eq 1 && "$1" != --gmmk3 ) ]]; then
+  printf '%s\n' 'Usage: bash macos/install.sh [--gmmk3]' >&2
+  exit 1
+fi
 knob_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 [[ "$(uname -s)" == Darwin ]] || { printf '%s\n' 'Bu yardımcı yalnızca macOS içindir.' >&2; exit 1; }
 if [[ ! -x "$knob_dir/build/smooth-next-knob" ]] || ! file "$knob_dir/build/smooth-next-knob" | grep -q "$(uname -m)"; then
@@ -21,4 +25,4 @@ cp "$knob_dir/smooth-next-knob.js" "$extensions_dir/smooth-next-knob.js"
 # The environment flag is only useful when the identical extensions were
 # already applied during a live verification; normal installation applies them.
 if [[ "${SMOOTH_NEXT_ALREADY_APPLIED:-0}" != 1 ]]; then "$spicetify_bin" apply; fi
-python3 "$knob_dir/manage.py" install
+python3 "$knob_dir/manage.py" install "$@"

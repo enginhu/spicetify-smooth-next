@@ -4,15 +4,14 @@ import Network
 import IOKit.hidsystem
 
 // No event tap, keystroke recorder, Apple Events, or USB firmware writes.
-// A per-device HID map redirects only Consumer Scan Next Track to F20.
+// Per-device HID maps redirect Next commands to F20. GMMK3's optional Mac
+// profile also keeps Fn+F5/F6 as native media keys without a Spotify connection.
 // Carbon consumes that reserved hotkey, and Spotify performs the fade itself.
 final class KnobBridge {
     var hid = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
     let mappingKey = "UserKeyMapping" as CFString
     let sourceKey = "HIDKeyboardModifierMappingSrc"
     let destinationKey = "HIDKeyboardModifierMappingDst"
-    let source: UInt64 = 0xC000000B5
-    let destination: UInt64 = 0x70000006F // F20
     var listener: NWListener?
     var connection: NWConnection?
     var hotkey: EventHotKeyRef?
@@ -25,6 +24,7 @@ final class KnobBridge {
     var pending: String?
     var pendingSince = Date.distantPast
     let journal: URL
+    let gmmkEnabled: Bool
     var warningTimes: [String: Date] = [:]
 
     init() {
@@ -32,6 +32,11 @@ final class KnobBridge {
             .appendingPathComponent("Library/Application Support/Smooth Next")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         journal = folder.appendingPathComponent("keymap-backup.plist")
+        let settingsURL = folder.appendingPathComponent("device-profiles.json")
+        if let data = try? Data(contentsOf: settingsURL),
+           let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            gmmkEnabled = settings["gmmk3_media_keys"] as? Bool ?? false
+        } else { gmmkEnabled = false }
         if let data = try? Data(contentsOf: journal),
            let saved = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: [String: Any]] {
             records = saved
@@ -57,9 +62,14 @@ final class KnobBridge {
         hid = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
         let all = IOHIDEventSystemClientCopyServices(hid) as? [IOHIDServiceClient] ?? []
         return all.filter {
-            (IOHIDServiceClientCopyProperty($0, "VendorID" as CFString) as? NSNumber)?.intValue == 2070 &&
-            (IOHIDServiceClientCopyProperty($0, "ProductID" as CFString) as? NSNumber)?.intValue == 9332
+            let ids = deviceIDs($0)
+            return DeviceMappings.known(vendor: ids.vendor, product: ids.product)
         }
+    }
+
+    func deviceIDs(_ service: IOHIDServiceClient) -> (vendor: Int, product: Int) {
+        ((IOHIDServiceClientCopyProperty(service, "VendorID" as CFString) as? NSNumber)?.intValue ?? 0,
+         (IOHIDServiceClientCopyProperty(service, "ProductID" as CFString) as? NSNumber)?.intValue ?? 0)
     }
 
     func registryID(_ service: IOHIDServiceClient) -> String {
@@ -88,13 +98,15 @@ final class KnobBridge {
             guard let record = records[id],
                   let installed = record["installed"] as? [[String: UInt64]],
                   let original = record["original"] as? [[String: UInt64]] else { continue }
+            let previous = record["previousInstalled"] as? [[String: UInt64]]
             // Preserve changes made later by the user or another remapper.
-            if mapping(service) == installed {
+            let current = mapping(service)
+            if current == installed || current == previous {
                 guard IOHIDServiceClientSetProperty(service, mappingKey, original as CFArray),
                       mapping(service) == original else {
                     warn("restore-\(id)", "Keymap restoration failed for \(id)"); continue
                 }
-                log("Native Next restored for \(id)")
+                log("Original mapping restored for \(id)")
             }
             records.removeValue(forKey: id)
         }
@@ -102,13 +114,14 @@ final class KnobBridge {
         if let key = hotkey { UnregisterEventHotKey(key); hotkey = nil }
     }
 
-    func activate() {
-        if hotkey == nil {
+    func reconcileMappings(fadeRequested: Bool) {
+        if fadeRequested && hotkey == nil {
             let status = RegisterEventHotKey(UInt32(kVK_F20), 0,
                 EventHotKeyID(signature: 0x534E4B42, id: 1), GetApplicationEventTarget(),
                 OptionBits(kEventHotKeyExclusive), &hotkey)
-            guard status == noErr else { warn("hotkey", "F20 is unavailable (\(status)); native mapping retained"); return }
+            if status != noErr { warn("hotkey", "F20 is unavailable (\(status)); native media mapping retained") }
         }
+        let fadeEnabled = fadeRequested && hotkey != nil
         let connected = services()
         let ids = Set(connected.map(registryID))
         let oldCount = records.count
@@ -116,38 +129,55 @@ final class KnobBridge {
         if records.count != oldCount { persist() }
         for service in connected {
             let id = registryID(service)
-            let original = mapping(service)
+            let current = mapping(service)
+            var original = current
+            let ids = deviceIDs(service)
+            let additions = DeviceMappings.additions(vendor: ids.vendor, product: ids.product,
+                                                    gmmkEnabled: gmmkEnabled, fadeEnabled: fadeEnabled)
             if let record = records[id],
                let baseline = record["original"] as? [[String: UInt64]],
                let installed = record["installed"] as? [[String: UInt64]] {
-                switch KeymapAction.reconcile(current: original, original: baseline, installed: installed) {
-                case .unchanged: continue
-                case .reinstall:
-                    apply(installed, to: service, id: id)
-                case .preserveExternalChange:
+                let previous = record["previousInstalled"] as? [[String: UInt64]]
+                if current != previous && KeymapAction.reconcile(current: current, original: baseline, installed: installed) == .preserveExternalChange {
                     warn("external-\(id)", "External mapping change for \(id); left unchanged")
+                    continue
                 }
-                continue
+                original = baseline
+            } else {
+                if additions.isEmpty { continue }
+                let sources = Set(additions.compactMap { $0[sourceKey] })
+                if current.contains(where: { sources.contains($0[sourceKey] ?? 0) ||
+                    $0[sourceKey] == DeviceMappings.fadeKey || $0[destinationKey] == DeviceMappings.fadeKey }) {
+                    warn("conflict-\(id)", "Conflicting device mapping for \(id); left unchanged"); continue
+                }
             }
-            // Never override another remapper's assignment of Next or F20.
-            if original.contains(where: { $0[sourceKey] == source || $0[sourceKey] == destination || $0[destinationKey] == destination }) {
-                warn("conflict-\(id)", "Conflicting device mapping for \(id); left unchanged"); continue
+            let installed = original + additions
+            if current == installed { continue }
+            // Save both owned states before switching native/fade modes, so a
+            // failed write or crash can recover either side of the transition.
+            records[id] = ["original": original, "installed": installed, "previousInstalled": current]
+            guard persist() else { continue }
+            if apply(installed, to: service, id: id) {
+                records[id] = ["original": original, "installed": installed]
+                persist()
             }
-            let installed = original + [[sourceKey: source, destinationKey: destination]]
-            records[id] = ["original": original, "installed": installed]
-            guard persist() else { records.removeValue(forKey: id); continue }
-            apply(installed, to: service, id: id)
+            if additions.isEmpty && mapping(service) == original {
+                records.removeValue(forKey: id); persist()
+            }
         }
+        if !fadeEnabled, let key = hotkey { UnregisterEventHotKey(key); hotkey = nil }
     }
 
-    func apply(_ installed: [[String: UInt64]], to service: IOHIDServiceClient, id: String) {
+    @discardableResult func apply(_ installed: [[String: UInt64]], to service: IOHIDServiceClient, id: String) -> Bool {
         let accepted = IOHIDServiceClientSetProperty(service, mappingKey, installed as CFArray)
         if mapping(service) == installed {
             warningTimes.removeValue(forKey: "apply-\(id)")
-            log("SDCX Next → fade enabled for \(id)")
+            log("Device media mapping applied for \(id)")
+            return true
         } else {
             // Retain the backup for retries and for any partially applied write.
             warn("apply-\(id)", "Cannot apply mapping for \(id) (setter accepted: \(accepted))")
+            return false
         }
     }
 
@@ -186,8 +216,8 @@ final class KnobBridge {
     func disconnect(_ client: NWConnection) {
         guard connection === client else { client.cancel(); return }
         connection = nil; clientEnabled = false; pending = nil
-        restore(); client.cancel()
-        log("Spotify disconnected; native knob behavior restored")
+        reconcileMappings(fadeRequested: false); client.cancel()
+        log("Spotify disconnected; native media behavior restored")
     }
 
     func receive(_ client: NWConnection) {
@@ -199,7 +229,7 @@ final class KnobBridge {
                let message = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 if message["type"] as? String == "status", let enabled = message["enabled"] as? Bool {
                     self.health.received(at: Date()); self.clientEnabled = enabled
-                    if enabled { self.activate() } else { self.restore() }
+                    self.reconcileMappings(fadeRequested: enabled)
                 } else if message["type"] as? String == "ack", message["id"] as? String == self.pending {
                     self.pending = nil
                 }
@@ -218,6 +248,7 @@ final class KnobBridge {
             return noErr
         }, 1, &event, Unmanaged.passUnretained(self).toOpaque(), &handler)
         guard status == noErr else { throw NSError(domain: "Hotkey", code: Int(status)) }
+        reconcileMappings(fadeRequested: false)
 
         let ws = NWProtocolWebSocket.Options()
         ws.autoReplyPing = true; ws.maximumMessageSize = 2048
@@ -259,9 +290,10 @@ final class KnobBridge {
             let now = Date()
             if !self.health.isAlive(at: now) {
                 if let client = self.connection { self.disconnect(client) }
+                else { self.reconcileMappings(fadeRequested: false) }
             } else if let client = self.connection {
                 if self.health.shouldPing(at: now) { self.ping(client) }
-                if self.clientEnabled { self.activate() }
+                self.reconcileMappings(fadeRequested: self.clientEnabled)
             }
         }
         for number in [SIGINT, SIGTERM] {

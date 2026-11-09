@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 — 2026-11-09
+
+- Add an opt-in GMMK3 (100%, USB `342d:e3d1`) Mac-mode Fn+F5/Fn+F6 media profile.
+- Route Fn+F5 to previous track and Fn+F6 to the existing fade-out; retain native media behavior when Spotify is disconnected or fade is disabled.
+- Preserve plain F5/F6, unrelated keyboards, and existing SDCX knob support.
+- Add native profile controls and eight regression checks (18 native checks, 34 JavaScript tests).
+- Wait for the old LaunchAgent to exit before reinstalling, avoiding intermittent bootstrap error 5.
+
 ## 1.2.1 — 2026-11-09
 
 - Refresh HID clients when enumerating devices, so USB reconnects do not leave stale services that reject all mapping writes.

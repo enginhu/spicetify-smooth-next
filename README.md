@@ -15,12 +15,13 @@ Smooth Next is a dependency-free [Spicetify](https://spicetify.app/) extension. 
 - **Next-track media keys** routed through Spotify's `PlayerAPI.skipToNext()` / Media Session `nexttrack` handler. This shared API route also works without a focused Spotify window.
 - DOM `MediaTrackNext` keyboard events, on clients that dispatch them.
 - **SDCX / SDINNOVATION SIDE-KEYBOARD knob on macOS**, including when Spotify is in the background, with the bundled [local companion](macos/README.tr.md).
+- Optional **GMMK3 Mac-mode Fn+F5 / Fn+F6** profile: previous track / next track, with the same fade-out on Next while Spotify is connected.
 
 Spotify Connect commands and operating-system commands that bypass Spotify's JavaScript player cannot be intercepted by this extension. Hardware/OS routing varies; the extension cannot guarantee every external media controller.
 
 ## Install
 
-Download `smooth-next-1.2.1.zip` from [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases/latest) and extract it. On macOS/Linux, open a terminal in the extracted folder:
+Download `smooth-next-1.3.0.zip` from [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases/latest) and extract it. On macOS/Linux, open a terminal in the extracted folder:
 
 ```sh
 bash install.sh
@@ -45,6 +46,8 @@ spicetify apply
 Toggle **Smooth Next · 2 sn fade-out** in the Spotify profile menu. Your preference is saved locally.
 
 For the SDCX knob on macOS, run `bash macos/install.sh` instead. It installs both extensions and a per-user companion that starts at login. The tested keypad has USB vendor/product IDs `0816:2474`. Only its Next command is temporarily mapped to reserved global hotkey F20, then forwarded over loopback to this extension. Previous-track and volume controls retain their mappings. The helper restores native Next when the extension disconnects, is disabled, or the helper exits. Details and removal: [macOS companion guide](macos/README.tr.md).
+
+For the **GMMK3 (100%) in Mac mode** (`342d:e3d1`), run `bash macos/install.sh --gmmk3`. This explicitly enables Fn+F5 → previous track and Fn+F6 → next track. Fn+F6 uses the fade when Spotify is connected and enabled; otherwise both combinations remain native media keys. Plain F5/F6 retain their original functions. To undo only the GMMK3 profile, run `python3 macos/manage.py disable-gmmk3`.
 
 ## Behavior
 
@@ -87,6 +90,8 @@ Version 1.2.0 passed 34 tests. The user physically turned the SDCX knob with Spo
 Version 1.2.1 fixes two persistence issues in the companion: HID service references are refreshed after USB reconnect/wake, and native WebSocket ping/pong replaces the short JavaScript heartbeat timeout. A minimized or throttled Spotify window no longer loses its mapping simply because page timers slow down. A device map reset to its saved baseline is reapplied, while another remapper's different mapping is preserved. The suite includes 34 JavaScript tests and 10 native regression checks.
 
 On November 9, the keypad was physically unplugged and reconnected with Spotify minimized. The running helper detected both new HID services and reapplied the mapping without restarting or reconnecting its Spotify session. The user confirmed that the knob still produced the two-second fade-out after reconnecting. The connection also remained established for several minutes without JavaScript heartbeats.
+
+Version 1.3.0 adds the optional GMMK3 profile. Both physical Fn combinations were verified by the user; mappings were also checked after restarting the companion. The native suite now has 18 checks covering profile opt-in, media fallback, plain function keys, and SDCX compatibility. The JavaScript suite has 34 tests.
 
 ## Privacy
 

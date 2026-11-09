@@ -1,5 +1,5 @@
 // NAME: Smooth Next
-// VERSION: 1.2.1
+// VERSION: 1.3.0
 // DESCRIPTION: Fade out for 2 seconds before Next, including keyboard/media commands. No fade-in.
 // No build step or dependencies. PlayerAPI hooks are feature-detected.
 
@@ -34,7 +34,7 @@
   let lastKnobCommand;
 
   const controller = {
-    version: "1.2.1",
+    version: "1.3.0",
     get enabled() { return enabled; },
     get busy() { return active !== null; },
     setEnabled,

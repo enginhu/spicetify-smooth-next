@@ -36,6 +36,25 @@ enum BridgeStateTests {
               "a reset originally empty map is restored")
         check(KeymapAction.reconcile(current: [["src": 181, "dst": 112]], original: original, installed: installed) == .preserveExternalChange,
               "another remapper's change is preserved")
+        let src = DeviceMappings.sourceKey, dst = DeviceMappings.destinationKey
+        let gmmkNative = DeviceMappings.additions(vendor: 13357, product: 58321, gmmkEnabled: true, fadeEnabled: false)
+        let gmmkFade = DeviceMappings.additions(vendor: 13357, product: 58321, gmmkEnabled: true, fadeEnabled: true)
+        check(gmmkNative.contains([src: DeviceMappings.voiceCommand, dst: DeviceMappings.previousTrack]),
+              "GMMK3 Fn+F5 sends native previous track")
+        check(gmmkNative.contains([src: DeviceMappings.doNotDisturb, dst: DeviceMappings.nextTrack]),
+              "GMMK3 Fn+F6 remains Next when Spotify is disconnected or fade disabled")
+        check(gmmkFade.contains([src: DeviceMappings.doNotDisturb, dst: DeviceMappings.fadeKey]),
+              "GMMK3 Fn+F6 uses the existing fade hotkey when Spotify is connected")
+        check(!gmmkFade.contains { [UInt64(0x70000003E), UInt64(0x70000003F)].contains($0[src] ?? 0) },
+              "plain F5 and F6 retain their normal keyboard behavior")
+        check(DeviceMappings.additions(vendor: 13357, product: 58321, gmmkEnabled: false, fadeEnabled: true).isEmpty,
+              "GMMK3 changes require explicit opt-in")
+        check(DeviceMappings.additions(vendor: 1, product: 2, gmmkEnabled: true, fadeEnabled: true).isEmpty,
+              "unrelated keyboards are not remapped")
+        check(DeviceMappings.additions(vendor: 2070, product: 9332, gmmkEnabled: true, fadeEnabled: true) ==
+              [[src: DeviceMappings.nextTrack, dst: DeviceMappings.fadeKey]], "SDCX knob mapping is retained")
+        check(DeviceMappings.additions(vendor: 2070, product: 9332, gmmkEnabled: true, fadeEnabled: false).isEmpty,
+              "SDCX keeps native behavior without Spotify")
         print("\(passed) native regression checks passed")
     }
 }

@@ -8,6 +8,8 @@ Tek dosyalık Spicetify eklentisidir; derleme, npm kurulumu, API anahtarı veya 
 
 **SDCX küçük klavyenin şarkı knob'u için:** `bash macos/install.sh` çalıştırın. Bu kurulum, eklentiyle birlikte macOS yardımcısını da kurar. [Knob kurulumu, çalışma şekli ve kaldırma](macos/README.tr.md).
 
+**GMMK3 Mac modu Fn+F5/Fn+F6 için:** `bash macos/install.sh --gmmk3` çalıştırın. Fn+F5 önceki, Fn+F6 sonraki şarkı olur. Spotify bağlı ve Smooth Next açıkken sonraki şarkıya geçişte 2 saniye fade-out uygulanır. Spotify kapalıyken normal medya tuşları olarak çalışırlar. Bu seçenek SDCX desteğini korur; başka klavyeleri ve düz F5/F6 tuşlarını değiştirmez.
+
 ## Kurulum — macOS / Linux
 
 Bu klasörde terminal açıp çalıştırın:

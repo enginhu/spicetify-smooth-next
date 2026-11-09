@@ -2,6 +2,27 @@
 
 Bu yardımcı, SDINNOVATION SIDE-KEYBOARD cihazındaki **sonraki parça** knob hareketini Smooth Next'e iletir. Spotify arka planda da olsa şarkı 2 saniyede kısılır, ardından sonraki şarkı önceki ses seviyesinde başlar. Fade-in yoktur.
 
+## GMMK3 Fn+F5 / Fn+F6 seçeneği
+
+GMMK3 (100%) klavye Mac modundayken, bu kullanıcıya özel profili etkinleştirmek için:
+
+```sh
+bash macos/install.sh --gmmk3
+```
+
+USB `342d:e3d1` modelinde Fn+F5'in sesli komut sinyali önceki şarkıya, Fn+F6'nın Do Not Disturb sinyali sonraki şarkıya eşlenir. Spotify bağlantısı açık ve Smooth Next etkinse Next aynı 2 saniyelik fade-out'u kullanır. Bağlantı yokken veya Smooth Next kapalıyken iki kombinasyon da normal medya tuşudur. Düz F5/F6 ve diğer klavyeler etkilenmez.
+
+Tercih `~/Library/Application Support/Smooth Next/device-profiles.json` dosyasında saklanır; oturum açılışında ve USB yeniden bağlantısında uygulanır. SDCX desteği devam eder. Yardımcı tamamen durdurulur/kaldırılırsa klavyenin önceki eşlemeleri geri gelir.
+
+Yalnızca GMMK3 tercihini açıp kapatma:
+
+```sh
+python3 macos/manage.py disable-gmmk3
+python3 macos/manage.py enable-gmmk3
+```
+
+9 Kasım 2026: Kullanıcı fiziksel Fn+F5 ve Fn+F6 kombinasyonlarının doğru çalıştığını doğruladı. Kalıcı profil yardımcı yeniden başlatıldıktan sonra yeniden uygulandı. `bash macos/test.sh` ile 18 yerel kontrol yapılır.
+
 ## Kurulum
 
 ZIP'i açın, ana klasörde terminal açıp çalıştırın:
@@ -16,7 +37,7 @@ Kurulum `smooth-next.js` ve `smooth-next-knob.js` eklentilerini etkinleştirir. 
 
 ## Nasıl çalışır?
 
-- Doğrulanan cihaz: USB `0816:2474`, üretici **SDINNOVATION**, ürün **SIDE-KEYBOARD**. Başka USB kimliklerine otomatik uygulanmaz.
+- SDCX için doğrulanan cihaz: USB `0816:2474`, üretici **SDINNOVATION**, ürün **SIDE-KEYBOARD**. Yukarıdaki GMMK3 profili ayrıca ve isteğe bağlı etkinleştirilir; başka USB kimliklerine uygulanmaz.
 - Yalnızca bu cihazın **Consumer Scan Next Track** komutu macOS'ta geçici olarak **F20**'ye eşlenir. F20 yardımcı tarafından genel kısayol olarak ayrılır. Fiziksel bir F20 tuşunuz varsa yardımcı etkin olduğu sürece o da aynı işlemi başlatır. Çakışan kayıt saptanırsa yardımcı eşlemeyi uygulamaz.
 - Komut `127.0.0.1:17643` üzerinden Spotify eklentisine iletilir. Port yalnızca bu bilgisayardan erişilebilir; Spotify origin'i ve protokolü doğrulanır. Şarkı bilgisi veya yazdığınız metinler aktarılmaz.
 - Ses knob'u, önceki şarkı yönü ve diğer tuşların eşlemeleri korunur. Cihazın kendi belleğine veya firmware'ine yazılmaz.
