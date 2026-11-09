@@ -1,23 +1,23 @@
-# GitHub ve Marketplace yayını
+# Publishing to GitHub and Marketplace
 
-Kaynak depo: [enginhu/spicetify-smooth-next](https://github.com/enginhu/spicetify-smooth-next). Kurulum paketleri [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases) üzerinden dağıtılır. GitHub yayını tek başına Marketplace listelendiği anlamına gelmez.
+Source repository: [enginhu/spicetify-smooth-next](https://github.com/enginhu/spicetify-smooth-next). Installation packages are distributed through [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases). Publishing a GitHub release does not automatically list the extension in Marketplace.
 
-Spicetify Marketplace için ayrı bir ZIP yükleme formu veya eklenti PR'ı gerekmiyor. [Resmî yayınlama belgesi](https://github.com/spicetify/marketplace/wiki/Publishing-to-Marketplace), eklentiyi keşfetmek için herkese açık bir GitHub deposu, `spicetify-extensions` topic etiketi ve kök klasörde geçerli `manifest.json` istiyor.
+Spicetify Marketplace does not require a separate ZIP upload or extension pull request. The [official publishing guide](https://github.com/spicetify/marketplace/wiki/Publishing-to-Marketplace) describes discovery through a public GitHub repository, the `spicetify-extensions` topic, and a valid `manifest.json` at the repository root.
 
-Bu projenin yayına hazır dosyaları:
+The repository includes these publishing files:
 
-- `manifest.json`: ad, açıklama, önizleme, ana JS dosyası, README ve etiketler.
-- `preview.svg`: kişisel hesap/çalma geçmişi içermeyen tanıtım görseli.
-- `smooth-next.js`: tek dosyalık eklenti.
-- `README.md` / `README.tr.md`: İngilizce ve Türkçe kullanım bilgileri.
-- `LICENSE`: MIT lisansı.
+- `manifest.json`: name, description, preview, main JavaScript file, README, and tags.
+- `preview.svg`: promotional artwork without personal account or listening-history data.
+- `smooth-next.js`: the single-file extension.
+- `README.md` and `macos/README.md`: usage and macOS companion instructions in English.
+- `LICENSE`: the MIT license.
 
-Güncelleme akışı:
+## Release workflow
 
-1. Kaynaktaki sürüm başlığını ve `controller.version` değerini güncelleyin.
-2. `node --test smooth-next.test.cjs` çalıştırın. Tam ZIP için macOS'ta `bash macos/build.sh`, ardından `python3 scripts/package.py` çalıştırın.
-3. Dosyaları GitHub deposunun varsayılan dalına gönderin.
-4. Yeni sürüm etiketiyle bir GitHub Release oluşturup `dist/` altındaki ZIP ve SHA-256 dosyasını ekleyin.
-5. Marketplace'te listeleme istenirse depoya `spicetify-extensions` etiketini ekleyin ve herkese açık durumunu koruyun. macOS knob yardımcısı ayrıca kurulur; Marketplace yalnızca ana JS eklentisini dağıtır.
+1. Update the source version header and `controller.version`, along with the companion extension header and release documentation.
+2. Run `node --test smooth-next.test.cjs` and `bash macos/test.sh`. To build the complete ZIP, run `bash macos/build.sh` on macOS, then `python3 scripts/package.py`.
+3. Push the changes to the GitHub repository's default branch.
+4. Create a GitHub release with a new version tag and attach the ZIP and SHA-256 file from `dist/`.
+5. If Marketplace listing is desired, add the `spicetify-extensions` repository topic and keep the repository public. The macOS companion requires separate installation; Marketplace distributes only the main JavaScript extension.
 
-GitHub ve Marketplace arama indekslerinin güncellenmesi anlık olmayabilir. Listelemeyi doğrulamadan “Marketplace aramasında görünüyor” sonucu çıkarılmamalıdır. ZIP, GitHub Release üzerinden doğrudan kurulabilir.
+GitHub and Marketplace search indexes may take time to update. Verify the listing before announcing that the extension appears in Marketplace search. Users can install the ZIP directly from GitHub Releases.

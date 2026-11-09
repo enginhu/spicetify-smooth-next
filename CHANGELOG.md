@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Standardize documentation, installer output, notifications, and menu labels on English.
+- Remove the Turkish guides, add an English macOS companion guide, and update documentation links and ZIP contents.
+
 ## 1.3.0 — 2026-11-09
 
 - Add an opt-in GMMK3 (100%, USB `342d:e3d1`) Mac-mode Fn+F5/Fn+F6 media profile.

@@ -5,14 +5,14 @@ if [[ "$#" -gt 1 || ( "$#" -eq 1 && "$1" != --gmmk3 ) ]]; then
   exit 1
 fi
 knob_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-[[ "$(uname -s)" == Darwin ]] || { printf '%s\n' 'Bu yardımcı yalnızca macOS içindir.' >&2; exit 1; }
+[[ "$(uname -s)" == Darwin ]] || { printf '%s\n' 'This companion requires macOS.' >&2; exit 1; }
 if [[ ! -x "$knob_dir/build/smooth-next-knob" ]] || ! file "$knob_dir/build/smooth-next-knob" | grep -q "$(uname -m)"; then
   bash "$knob_dir/build.sh"
 fi
 spicetify_bin="$(command -v spicetify || true)"
 [[ -n "$spicetify_bin" ]] || spicetify_bin="$HOME/.spicetify/spicetify"
 config_path="$("$spicetify_bin" -c)"
-[[ -f "$config_path" ]] || { printf '%s\n' 'Spicetify yapılandırması bulunamadı.' >&2; exit 1; }
+[[ -f "$config_path" ]] || { printf '%s\n' 'Spicetify configuration was not found.' >&2; exit 1; }
 extensions_dir="$(dirname -- "$config_path")/Extensions"
 mkdir -p "$extensions_dir"
 for extension in smooth-next.js smooth-next-knob.js; do

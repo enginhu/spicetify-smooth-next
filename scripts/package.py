@@ -10,9 +10,9 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (
     "smooth-next.js", "smooth-next.test.cjs", "install.sh", "manifest.json",
-    "README.md", "README.tr.md", "CHANGELOG.md", "LICENSE", "preview.svg",
+    "README.md", "CHANGELOG.md", "LICENSE", "preview.svg",
     "PUBLISHING.md", "scripts/package.py", ".gitignore",
-    "macos/README.tr.md", "macos/KnobBridge.swift", "macos/build.sh",
+    "macos/README.md", "macos/KnobBridge.swift", "macos/build.sh",
     "macos/install.sh", "macos/uninstall.sh", "macos/manage.py",
     "macos/smooth-next-knob.js", "macos/build/smooth-next-knob",
     "macos/BridgeState.swift", "macos/BridgeStateTests.swift", "macos/test.sh",

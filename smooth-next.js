@@ -86,7 +86,7 @@
 
   function report(error) {
     console.error("[Smooth Next]", error);
-    window.Spicetify?.showNotification?.("Smooth Next: Geçiş tamamlanamadı; ses geri yüklenmeye çalışıldı.", true);
+    window.Spicetify?.showNotification?.("Smooth Next: The transition failed; an attempt was made to restore the volume.", true);
   }
 
   function listen(target, type, handler, capture = false) {
@@ -96,7 +96,7 @@
 
   function refreshPlayer() {
     const current = window.Spicetify?.Player;
-    if (!current) throw new Error("Spicetify.Player henüz hazır değil.");
+    if (!current) throw new Error("Spicetify.Player is not ready yet.");
     if (current === player) return;
     // Spotify/Spicetify can replace this object after extension startup.
     // The original object may still expose methods, but its data stays empty.
@@ -136,7 +136,7 @@
         target.skipToNext = skipToNext;
         if (target.skipToNext === skipToNext) skipHooks.set(target, { original, wrapped: skipToNext });
       } catch (error) {
-        console.warn("[Smooth Next] Medya tuşu bağlantısı kurulamadı.", error);
+        console.warn("[Smooth Next] Could not attach the media-key handler.", error);
       }
     }
   }
@@ -175,7 +175,7 @@
     sendKnobStatus();
     if (menu) menu.isEnabled = enabled;
     try { window.Spicetify?.LocalStorage?.set(ENABLED_KEY, String(enabled)); }
-    catch (error) { console.warn("[Smooth Next] Ayar kaydedilemedi.", error); }
+    catch (error) { console.warn("[Smooth Next] Could not save the preference.", error); }
   }
 
   function destroy() {
@@ -250,7 +250,7 @@
         // setVolume() returns void in the official wrapper. Check its reported
         // result before skipping, instead of assuming an awaited call is an ACK.
         if (player.getVolume() > 0.005) {
-          if (now >= transition.deadline) finish(new Error("Ses kısma isteği uygulanmadı."));
+          if (now >= transition.deadline) finish(new Error("The volume reduction request was not applied."));
           return;
         }
         transition.phase = "switching";
@@ -270,7 +270,7 @@
       }
 
       if (transition.phase === "switching" && now >= transition.deadline) {
-        finish(new Error("Sonraki şarkı zamanında başlamadı."));
+        finish(new Error("The next track did not start in time."));
       }
     } catch (error) {
       finish(error);
@@ -305,7 +305,7 @@
       return active;
     } catch (error) {
       // If the APIs are not ready, leave this click to Spotify.
-      console.warn("[Smooth Next] Oynatıcı hazır değil.", error);
+      console.warn("[Smooth Next] The player is not ready.", error);
       return null;
     }
   }
@@ -364,15 +364,15 @@
     // attached without replacing Spotify's Media Session handlers.
     apiTimer = setInterval(refreshSkipHooks, 1000);
     try { enabled = spice.LocalStorage.get(ENABLED_KEY) !== "false"; }
-    catch (error) { console.warn("[Smooth Next] Ayar okunamadı.", error); }
-    menu = new spice.Menu.Item("Smooth Next · 2 sn fade-out", enabled, () => setEnabled(!enabled));
+    catch (error) { console.warn("[Smooth Next] Could not read the preference.", error); }
+    menu = new spice.Menu.Item("Smooth Next · 2 s fade-out", enabled, () => setEnabled(!enabled));
     menu.register();
     listen(document, "click", onClick, true);
     listen(window, "keydown", onKeyDown, true);
     for (const type of ["pointerdown", "wheel", "keydown", "click"]) listen(document, type, onUserControl, true);
     listen(window, "beforeunload", destroy);
     connectKnob();
-    console.info("[Smooth Next] Hazır: 2 saniye fade-out, ardından sonraki şarkı.");
+    console.info("[Smooth Next] Ready: a 2-second fade-out, then the next track.");
   }
 
   ready();

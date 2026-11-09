@@ -6,7 +6,7 @@
 
 Smooth Next is a dependency-free [Spicetify](https://spicetify.app/) extension. Press Next and the current song fades to silence over two seconds. Spotify then advances its own queue, and your original volume returns immediately.
 
-[Download ZIP](https://github.com/enginhu/spicetify-smooth-next/releases/latest) · [Türkçe kullanım kılavuzu](README.tr.md) · [Release notes](CHANGELOG.md)
+[Download ZIP](https://github.com/enginhu/spicetify-smooth-next/releases/latest) · [macOS companion guide](macos/README.md) · [Release notes](CHANGELOG.md)
 
 ## Controls
 
@@ -14,7 +14,7 @@ Smooth Next is a dependency-free [Spicetify](https://spicetify.app/) extension. 
 - **Cmd + Right Arrow** on macOS or **Ctrl + Right Arrow** on Windows/Linux, outside text fields and sliders.
 - **Next-track media keys** routed through Spotify's `PlayerAPI.skipToNext()` / Media Session `nexttrack` handler. This shared API route also works without a focused Spotify window.
 - DOM `MediaTrackNext` keyboard events, on clients that dispatch them.
-- **SDCX / SDINNOVATION SIDE-KEYBOARD knob on macOS**, including when Spotify is in the background, with the bundled [local companion](macos/README.tr.md).
+- **SDCX / SDINNOVATION SIDE-KEYBOARD knob on macOS**, including when Spotify is in the background, with the bundled [local companion](macos/README.md).
 - Optional **GMMK3 Mac-mode Fn+F5 / Fn+F6** profile: previous track / next track, with the same fade-out on Next while Spotify is connected.
 
 Spotify Connect commands and operating-system commands that bypass Spotify's JavaScript player cannot be intercepted by this extension. Hardware/OS routing varies; the extension cannot guarantee every external media controller.
@@ -43,9 +43,9 @@ spicetify config extensions smooth-next.js
 spicetify apply
 ```
 
-Toggle **Smooth Next · 2 sn fade-out** in the Spotify profile menu. Your preference is saved locally.
+Toggle **Smooth Next · 2 s fade-out** in the Spotify profile menu. Your preference is saved locally.
 
-For the SDCX knob on macOS, run `bash macos/install.sh` instead. It installs both extensions and a per-user companion that starts at login. The tested keypad has USB vendor/product IDs `0816:2474`. Only its Next command is temporarily mapped to reserved global hotkey F20, then forwarded over loopback to this extension. Previous-track and volume controls retain their mappings. The helper restores native Next when the extension disconnects, is disabled, or the helper exits. Details and removal: [macOS companion guide](macos/README.tr.md).
+For the SDCX knob on macOS, run `bash macos/install.sh` instead. It installs both extensions and a per-user companion that starts at login. The tested keypad has USB vendor/product IDs `0816:2474`. Only its Next command is temporarily mapped to reserved global hotkey F20, then forwarded over loopback to this extension. Previous-track and volume controls retain their mappings. The helper restores native Next when the extension disconnects, is disabled, or the helper exits. Details and removal: [macOS companion guide](macos/README.md).
 
 For the **GMMK3 (100%) in Mac mode** (`342d:e3d1`), run `bash macos/install.sh --gmmk3`. This explicitly enables Fn+F5 → previous track and Fn+F6 → next track. Fn+F6 uses the fade when Spotify is connected and enabled; otherwise both combinations remain native media keys. Plain F5/F6 retain their original functions. To undo only the GMMK3 profile, run `python3 macos/manage.py disable-gmmk3`.
 

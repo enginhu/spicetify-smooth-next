@@ -7,13 +7,13 @@ if [[ -z "$spicetify_bin" && -x "$HOME/.spicetify/spicetify" ]]; then
   spicetify_bin="$HOME/.spicetify/spicetify"
 fi
 if [[ -z "$spicetify_bin" ]]; then
-  printf '%s\n' 'Spicetify bulunamadı. Önce Spicetify kurulumunu tamamlayın.' >&2
+  printf '%s\n' 'Spicetify was not found. Install Spicetify first.' >&2
   exit 1
 fi
 
 config_path="$("$spicetify_bin" -c)"
 if [[ ! -f "$config_path" ]]; then
-  printf '%s\n' "Spicetify yapılandırması bulunamadı: $config_path" >&2
+  printf '%s\n' "Spicetify configuration was not found: $config_path" >&2
   exit 1
 fi
 extensions_dir="$(dirname -- "$config_path")/Extensions"
@@ -23,6 +23,6 @@ if [[ -f "$extensions_dir/smooth-next.js" ]]; then
 fi
 cp "$script_dir/smooth-next.js" "$extensions_dir/smooth-next.js"
 "$spicetify_bin" config extensions smooth-next.js
-printf '%s\n' 'Smooth Next uygulanıyor. Spotify yeniden başlayabilir.'
+printf '%s\n' 'Applying Smooth Next. Spotify may restart.'
 "$spicetify_bin" apply
-printf '%s\n' 'Kuruldu. Spotify profil menüsünden Smooth Next açılıp kapatılabilir.'
+printf '%s\n' 'Installed. Toggle Smooth Next in the Spotify profile menu.'

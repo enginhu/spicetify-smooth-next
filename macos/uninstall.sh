@@ -6,4 +6,4 @@ spicetify_bin="$(command -v spicetify || true)"
 [[ -n "$spicetify_bin" ]] || spicetify_bin="$HOME/.spicetify/spicetify"
 "$spicetify_bin" config extensions smooth-next-knob.js-
 "$spicetify_bin" apply
-printf '%s\n' 'Knob yönlendirmesi kaldırıldı. Smooth Next düğme/klavye desteği duruyor.'
+printf '%s\n' 'Companion media-key mappings removed. Smooth Next button and keyboard support is retained.'
