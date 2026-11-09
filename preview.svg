@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Smooth Next</title>
+  <desc id="desc">A two-second fade-out before the next song. Supports the Next button, keyboard shortcuts and media keys.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#171e1b"/><stop offset="1" stop-color="#080c0a"/></linearGradient>
+    <linearGradient id="area" x2="0" y2="1"><stop stop-color="#81f7af" stop-opacity=".2"/><stop offset="1" stop-color="#81f7af" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="32" fill="url(#bg)"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="64" y="54" width="202" height="34" rx="17" fill="#273a2e"/>
+    <text x="83" y="76" fill="#a5e2b9" font-size="13" font-weight="700" letter-spacing="2">SPICETIFY EXTENSION</text>
+    <text x="64" y="169" fill="#f4faf6" font-size="76" font-weight="700" letter-spacing="-3">Smooth Next</text>
+    <text x="68" y="214" fill="#a9bbb0" font-size="26">A softer way to skip.</text>
+    <text x="1053" y="164" fill="#9dffbb" font-size="66" font-weight="700">2s</text>
+    <text x="1006" y="202" fill="#8fa798" font-size="17">FADE-OUT</text>
+    <path d="M76 471H1124" stroke="#2c3a32" stroke-width="2"/>
+    <path d="M76 292V471M834 292V471" stroke="#2c3a32" stroke-width="2" stroke-dasharray="5 9"/>
+    <path d="M76 299C385 299 525 471 834 471V471H76Z" fill="url(#area)"/>
+    <path d="M76 299C385 299 525 471 834 471" fill="none" stroke="#9dffbb" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="76" cy="299" r="8" fill="#9dffbb"/>
+    <circle cx="834" cy="471" r="8" fill="#9dffbb"/>
+    <path d="M930 363l42 29-42 29zM984 363v58" stroke="#9dffbb" fill="#9dffbb" stroke-width="7" stroke-linejoin="round"/>
+    <text x="76" y="510" fill="#a9bbb0" font-size="17">YOUR VOLUME</text>
+    <text x="764" y="510" fill="#a9bbb0" font-size="17">SILENCE</text>
+    <text x="919" y="510" fill="#f4faf6" font-size="17" font-weight="700">NEXT TRACK</text>
+    <rect x="64" y="564" width="218" height="52" rx="12" fill="#213027"/>
+    <rect x="296" y="564" width="199" height="52" rx="12" fill="#213027"/>
+    <rect x="509" y="564" width="244" height="52" rx="12" fill="#213027"/>
+    <text x="87" y="597" fill="#d1e9d9" font-size="20">Next button</text>
+    <text x="320" y="597" fill="#d1e9d9" font-size="20">Media keys</text>
+    <text x="533" y="597" fill="#d1e9d9" font-size="20">Cmd / Ctrl + →</text>
+    <text x="978" y="597" fill="#7f9989" font-size="20">No fade-in.</text>
+  </g>
+</svg>

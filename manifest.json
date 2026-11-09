@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Smooth Next",
+    "description": "Fade out for 2 seconds before skipping with Next, keyboard shortcuts, or media keys. No fade-in.",
+    "preview": "preview.svg",
+    "main": "smooth-next.js",
+    "readme": "README.md",
+    "tags": ["playback", "fade-out", "keyboard", "media-keys"]
+  }
+]
