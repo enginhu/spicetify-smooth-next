@@ -20,7 +20,7 @@ Spotify Connect commands and operating-system commands that bypass Spotify's Jav
 
 ## Install
 
-Download `smooth-next-1.2.0.zip` from [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases/latest) and extract it. On macOS/Linux, open a terminal in the extracted folder:
+Download `smooth-next-1.2.1.zip` from [GitHub Releases](https://github.com/enginhu/spicetify-smooth-next/releases/latest) and extract it. On macOS/Linux, open a terminal in the extracted folder:
 
 ```sh
 bash install.sh
@@ -74,7 +74,7 @@ node --check smooth-next.js
 node --test smooth-next.test.cjs
 ```
 
-To build the complete release ZIP from a source checkout, run `bash macos/build.sh` on macOS with Xcode Command Line Tools, then `python3 scripts/package.py`. The ZIP includes the compiled companion; the Git repository contains its Swift source. The companion targets macOS 13 or later; the bundled release binary is for Apple Silicon.
+To build the complete release ZIP from a source checkout, run `bash macos/build.sh` on macOS with Xcode Command Line Tools, then `python3 scripts/package.py`. Run the native regression checks with `bash macos/test.sh`. The ZIP includes the compiled companion; the Git repository contains its Swift source. The companion targets macOS 13 or later; the bundled release binary is for Apple Silicon.
 
 The automated suite covers volume timing, startup API replacement, stale buffering flags, keyboard commands, the shared background media-key route, duplicate commands, cancellation, errors, and cleanup. The original button transition was also measured inside Spotify 1.3.9.2039 with Spicetify 2.46.4 on macOS: volume was `1` initially, `0.529` at 1004 ms, and `0.001` at 2001 ms; by 2202 ms the next track was selected and volume was restored to `1`. This is player-state telemetry, not an audio waveform measurement.
 
@@ -84,9 +84,13 @@ Version 1.1.0 also passed 31 automated tests. A live call to `Spicetify.Platform
 
 Version 1.2.0 passed 34 tests. The user physically turned the SDCX knob with Spotify in the background and confirmed the fade. Measured from the first observed active fade: volume was `0.529` at 959 ms, `0` at 2002 ms, and the next track was playing at restored volume `1` by 2080 ms. Stopping the companion restored both matching HID services' previous empty keymaps.
 
+Version 1.2.1 fixes two persistence issues in the companion: HID service references are refreshed after USB reconnect/wake, and native WebSocket ping/pong replaces the short JavaScript heartbeat timeout. A minimized or throttled Spotify window no longer loses its mapping simply because page timers slow down. A device map reset to its saved baseline is reapplied, while another remapper's different mapping is preserved. The suite includes 34 JavaScript tests and 10 native regression checks.
+
+On November 9, the keypad was physically unplugged and reconnected with Spotify minimized. The running helper detected both new HID services and reapplied the mapping without restarting or reconnecting its Spotify session. The user confirmed that the knob still produced the two-second fade-out after reconnecting. The connection also remained established for several minutes without JavaScript heartbeats.
+
 ## Privacy
 
-The base extension sends no network requests and collects no listening data. It reads playback state and changes playback volume/Next locally. The optional knob module connects only to `127.0.0.1:17643`; it exchanges Next commands, acknowledgements and an enabled heartbeat, without song metadata. The server accepts the Spotify origin and binds only to loopback. No input-monitoring or Accessibility permission, event tap, or firmware modification is used. The extension writes `smooth-next:enabled` in Spicetify local storage; the companion keeps its mapping recovery file and operational logs in `~/Library/Application Support/Smooth Next/`.
+The base extension sends no network requests and collects no listening data. It reads playback state and changes playback volume/Next locally. The optional knob module connects only to `127.0.0.1:17643`; it exchanges Next commands, acknowledgements, enabled-state changes and native protocol ping/pong, without song metadata. The server accepts the Spotify origin and binds only to loopback. No input-monitoring or Accessibility permission, event tap, or firmware modification is used. The extension writes `smooth-next:enabled` in Spicetify local storage; the companion keeps its mapping recovery file and operational logs in `~/Library/Application Support/Smooth Next/`.
 
 ## License
 

@@ -7,7 +7,7 @@ import IOKit.hidsystem
 // A per-device HID map redirects only Consumer Scan Next Track to F20.
 // Carbon consumes that reserved hotkey, and Spotify performs the fade itself.
 final class KnobBridge {
-    let hid = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
+    var hid = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
     let mappingKey = "UserKeyMapping" as CFString
     let sourceKey = "HIDKeyboardModifierMappingSrc"
     let destinationKey = "HIDKeyboardModifierMappingDst"
@@ -19,12 +19,13 @@ final class KnobBridge {
     var handler: EventHandlerRef?
     var timer: Timer?
     var signals: [DispatchSourceSignal] = []
-    var lastHeartbeat = Date.distantPast
+    var health = BridgeHealth()
     var clientEnabled = false
     var records: [String: [String: Any]] = [:]
     var pending: String?
     var pendingSince = Date.distantPast
     let journal: URL
+    var warningTimes: [String: Date] = [:]
 
     init() {
         let folder = FileManager.default.homeDirectoryForCurrentUser
@@ -37,9 +38,23 @@ final class KnobBridge {
         }
     }
 
-    func log(_ message: String) { print("[Smooth Next Knob] \(message)"); fflush(stdout) }
+    func log(_ message: String) {
+        print("[Smooth Next Knob] \(ISO8601DateFormatter().string(from: Date())) \(message)")
+        fflush(stdout)
+    }
+
+    func warn(_ key: String, _ message: String) {
+        let now = Date()
+        if now.timeIntervalSince(warningTimes[key] ?? .distantPast) >= 30 {
+            warningTimes[key] = now; log(message)
+        }
+    }
 
     func services() -> [IOHIDServiceClient] {
+        // Simple clients retain their service snapshot. Reusing one after USB
+        // reconnect/wake leaves dead service objects that reject every write.
+        // Keep each fresh client alive while the returned services are used.
+        hid = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
         let all = IOHIDEventSystemClientCopyServices(hid) as? [IOHIDServiceClient] ?? []
         return all.filter {
             (IOHIDServiceClientCopyProperty($0, "VendorID" as CFString) as? NSNumber)?.intValue == 2070 &&
@@ -65,7 +80,10 @@ final class KnobBridge {
 
     func restore() {
         if records.isEmpty && hotkey == nil { return }
-        for service in services() {
+        let connected = services()
+        let ids = Set(connected.map(registryID))
+        records = records.filter { ids.contains($0.key) }
+        for service in connected {
             let id = registryID(service)
             guard let record = records[id],
                   let installed = record["installed"] as? [[String: UInt64]],
@@ -74,7 +92,7 @@ final class KnobBridge {
             if mapping(service) == installed {
                 guard IOHIDServiceClientSetProperty(service, mappingKey, original as CFArray),
                       mapping(service) == original else {
-                    log("Keymap restoration failed for \(id)"); continue
+                    warn("restore-\(id)", "Keymap restoration failed for \(id)"); continue
                 }
                 log("Native Next restored for \(id)")
             }
@@ -89,30 +107,52 @@ final class KnobBridge {
             let status = RegisterEventHotKey(UInt32(kVK_F20), 0,
                 EventHotKeyID(signature: 0x534E4B42, id: 1), GetApplicationEventTarget(),
                 OptionBits(kEventHotKeyExclusive), &hotkey)
-            guard status == noErr else { log("F20 is unavailable (\(status)); native mapping retained"); return }
+            guard status == noErr else { warn("hotkey", "F20 is unavailable (\(status)); native mapping retained"); return }
         }
-        for service in services() {
+        let connected = services()
+        let ids = Set(connected.map(registryID))
+        let oldCount = records.count
+        records = records.filter { ids.contains($0.key) }
+        if records.count != oldCount { persist() }
+        for service in connected {
             let id = registryID(service)
-            if records[id] != nil { continue }
             let original = mapping(service)
+            if let record = records[id],
+               let baseline = record["original"] as? [[String: UInt64]],
+               let installed = record["installed"] as? [[String: UInt64]] {
+                switch KeymapAction.reconcile(current: original, original: baseline, installed: installed) {
+                case .unchanged: continue
+                case .reinstall:
+                    apply(installed, to: service, id: id)
+                case .preserveExternalChange:
+                    warn("external-\(id)", "External mapping change for \(id); left unchanged")
+                }
+                continue
+            }
             // Never override another remapper's assignment of Next or F20.
             if original.contains(where: { $0[sourceKey] == source || $0[sourceKey] == destination || $0[destinationKey] == destination }) {
-                log("Conflicting device mapping; left unchanged"); continue
+                warn("conflict-\(id)", "Conflicting device mapping for \(id); left unchanged"); continue
             }
             let installed = original + [[sourceKey: source, destinationKey: destination]]
             records[id] = ["original": original, "installed": installed]
             guard persist() else { records.removeValue(forKey: id); continue }
-            if IOHIDServiceClientSetProperty(service, mappingKey, installed as CFArray), mapping(service) == installed {
-                log("SDCX Next → fade enabled for \(id)")
-            } else {
-                log("Cannot apply the device mapping")
-                records.removeValue(forKey: id); persist()
-            }
+            apply(installed, to: service, id: id)
+        }
+    }
+
+    func apply(_ installed: [[String: UInt64]], to service: IOHIDServiceClient, id: String) {
+        let accepted = IOHIDServiceClientSetProperty(service, mappingKey, installed as CFArray)
+        if mapping(service) == installed {
+            warningTimes.removeValue(forKey: "apply-\(id)")
+            log("SDCX Next → fade enabled for \(id)")
+        } else {
+            // Retain the backup for retries and for any partially applied write.
+            warn("apply-\(id)", "Cannot apply mapping for \(id) (setter accepted: \(accepted))")
         }
     }
 
     func next() {
-        guard clientEnabled, Date().timeIntervalSince(lastHeartbeat) < 3, let client = connection else { return }
+        guard clientEnabled, health.isAlive(at: Date()), let client = connection else { return }
         // A lost acknowledgement must not queue up late skips.
         if pending != nil && Date().timeIntervalSince(pendingSince) < 3 { return }
         let id = UUID().uuidString
@@ -126,6 +166,19 @@ final class KnobBridge {
         let metadata = NWProtocolWebSocket.Metadata(opcode: .text)
         let context = NWConnection.ContentContext(identifier: "smooth-next", metadata: [metadata])
         client.send(content: data, contentContext: context, isComplete: true, completion: .contentProcessed { [weak self] error in
+            if error != nil { self?.disconnect(client) }
+        })
+    }
+
+    func ping(_ client: NWConnection) {
+        let metadata = NWProtocolWebSocket.Metadata(opcode: .ping)
+        metadata.setPongHandler(.main) { [weak self] error in
+            guard let self, self.connection === client else { return }
+            if error != nil { self.disconnect(client); return }
+            self.health.received(at: Date())
+        }
+        let context = NWConnection.ContentContext(identifier: "smooth-next-ping", metadata: [metadata])
+        client.send(content: Data(), contentContext: context, isComplete: true, completion: .contentProcessed { [weak self] error in
             if error != nil { self?.disconnect(client) }
         })
     }
@@ -145,7 +198,7 @@ final class KnobBridge {
             if metadata?.opcode == .text, let data,
                let message = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 if message["type"] as? String == "status", let enabled = message["enabled"] as? Bool {
-                    self.lastHeartbeat = Date(); self.clientEnabled = enabled
+                    self.health.received(at: Date()); self.clientEnabled = enabled
                     if enabled { self.activate() } else { self.restore() }
                 } else if message["type"] as? String == "ack", message["id"] as? String == self.pending {
                     self.pending = nil
@@ -190,7 +243,8 @@ final class KnobBridge {
                 switch state {
                 case .ready:
                     if let previous = self.connection { self.disconnect(previous) }
-                    self.connection = client; self.lastHeartbeat = Date()
+                    self.connection = client; self.health = BridgeHealth()
+                    self.health.received(at: Date())
                     self.receive(client); self.log("Spotify bridge connected")
                 case .failed, .cancelled:
                     if self.connection === client { self.disconnect(client) }
@@ -202,9 +256,13 @@ final class KnobBridge {
         server.start(queue: .main)
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if Date().timeIntervalSince(self.lastHeartbeat) >= 3 {
+            let now = Date()
+            if !self.health.isAlive(at: now) {
                 if let client = self.connection { self.disconnect(client) }
-            } else if self.clientEnabled { self.activate() }
+            } else if let client = self.connection {
+                if self.health.shouldPing(at: now) { self.ping(client) }
+                if self.clientEnabled { self.activate() }
+            }
         }
         for number in [SIGINT, SIGTERM] {
             signal(number, SIG_IGN)
@@ -221,8 +279,13 @@ final class KnobBridge {
     }
 }
 
-let app = NSApplication.shared
-app.setActivationPolicy(.prohibited)
-let bridge = KnobBridge()
-do { try bridge.start(); app.run() }
-catch { bridge.log("Startup failed: \(error)"); bridge.stop(); exit(1) }
+@main
+enum KnobMain {
+    static func main() {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.prohibited)
+        let bridge = KnobBridge()
+        do { try bridge.start(); app.run() }
+        catch { bridge.log("Startup failed: \(error)"); bridge.stop(); exit(1) }
+    }
+}

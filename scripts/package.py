@@ -15,6 +15,7 @@ FILES = (
     "macos/README.tr.md", "macos/KnobBridge.swift", "macos/build.sh",
     "macos/install.sh", "macos/uninstall.sh", "macos/manage.py",
     "macos/smooth-next-knob.js", "macos/build/smooth-next-knob",
+    "macos/BridgeState.swift", "macos/BridgeStateTests.swift", "macos/test.sh",
 )
 
 source = (ROOT / "smooth-next.js").read_text(encoding="utf-8")

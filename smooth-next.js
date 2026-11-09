@@ -1,5 +1,5 @@
 // NAME: Smooth Next
-// VERSION: 1.2.0
+// VERSION: 1.2.1
 // DESCRIPTION: Fade out for 2 seconds before Next, including keyboard/media commands. No fade-in.
 // No build step or dependencies. PlayerAPI hooks are feature-detected.
 
@@ -30,12 +30,11 @@
   const unlisten = [];
   const skipHooks = new Map();
   let knobSocket;
-  let knobHeartbeat;
   let knobRetry;
   let lastKnobCommand;
 
   const controller = {
-    version: "1.2.0",
+    version: "1.2.1",
     get enabled() { return enabled; },
     get busy() { return active !== null; },
     setEnabled,
@@ -57,7 +56,8 @@
     socket.onopen = () => {
       if (disposed || knobSocket !== socket) { socket.close(); return; }
       sendKnobStatus();
-      knobHeartbeat = setInterval(sendKnobStatus, 500);
+      // Native WebSocket ping/pong keeps the companion alive even when
+      // Chromium throttles this page's background JavaScript timers.
     };
     socket.onmessage = (event) => {
       if (disposed || knobSocket !== socket) return;
@@ -73,7 +73,6 @@
     socket.onerror = () => socket.close();
     socket.onclose = () => {
       if (knobSocket !== socket) return;
-      clearInterval(knobHeartbeat);
       knobSocket = undefined;
       if (!disposed) knobRetry = setTimeout(connectKnob, 5000);
     };
@@ -184,7 +183,6 @@
     clearTimeout(readyTimer);
     clearInterval(apiTimer);
     clearTimeout(knobRetry);
-    clearInterval(knobHeartbeat);
     knobSocket?.close();
     knobSocket = undefined;
     finish();

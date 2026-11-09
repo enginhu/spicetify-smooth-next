@@ -88,3 +88,9 @@ Cmd/Ctrl + Sağ Ok, `MediaTrackNext` olayı ve Spotify'ın medya tuşları için
 ## 1.2.0 SDCX knob desteği
 
 SDCX cihazının Next komutunun macOS üzerinden eklentiyi atladığı fiziksel testte doğrulandı. Yerel macOS yardımcısı bu cihazın yalnızca Next komutunu eklentiye yönlendirir; 2 saniyelik fade-out ve şarkı geçişini yine eklenti yapar. Spotify arka plandayken fiziksel knob çevrilerek çalıştığı kullanıcı tarafından doğrulandı. İlk etkin fade gözlemine göre ses 959 ms'de `0.529`, 2002 ms'de `0` idi; 2080 ms'de sonraki şarkıya geçilmiş ve ses `1` seviyesine geri dönmüştü. 34 otomatik test geçti; yardımcı kapatıldığında cihazın eski eşlemelerinin geri yüklendiği ayrıca kontrol edildi.
+
+## 1.2.1 yeniden bağlantı düzeltmesi
+
+USB bağlantısı değiştiğinde eski HID hizmeti nesnelerinin kullanılması ve Spotify arka plandayken JavaScript zamanlayıcısının gecikmesi, knob yönlendirmesini devreden çıkarabiliyordu. Yardımcı artık güncel HID hizmetlerini yeniden tarar; bağlantıyı tarayıcının kendi WebSocket ping/pong yanıtlarıyla korur. Sistem eşlemeyi kayıtlı başlangıç durumuna sıfırlarsa yeniden uygular; başka bir aracın farklı eşlemesini korur. 34 JavaScript testi ve `bash macos/test.sh` ile çalışan 10 yerel regresyon kontrolü geçti.
+
+9 Kasım 2026: Spotify simge durumundayken klavye fiziksel olarak çıkarılıp takıldı. Yardımcı yeniden başlatılmadan iki yeni HID hizmetini eşledi; Spotify bağlantısı açık kaldı. Kullanıcı yeniden bağlantı sonrasında da knob ile 2 saniyelik kısılmanın çalıştığını doğruladı.

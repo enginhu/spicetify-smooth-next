@@ -20,8 +20,8 @@ Kurulum `smooth-next.js` ve `smooth-next-knob.js` eklentilerini etkinleştirir. 
 - Yalnızca bu cihazın **Consumer Scan Next Track** komutu macOS'ta geçici olarak **F20**'ye eşlenir. F20 yardımcı tarafından genel kısayol olarak ayrılır. Fiziksel bir F20 tuşunuz varsa yardımcı etkin olduğu sürece o da aynı işlemi başlatır. Çakışan kayıt saptanırsa yardımcı eşlemeyi uygulamaz.
 - Komut `127.0.0.1:17643` üzerinden Spotify eklentisine iletilir. Port yalnızca bu bilgisayardan erişilebilir; Spotify origin'i ve protokolü doğrulanır. Şarkı bilgisi veya yazdığınız metinler aktarılmaz.
 - Ses knob'u, önceki şarkı yönü ve diğer tuşların eşlemeleri korunur. Cihazın kendi belleğine veya firmware'ine yazılmaz.
-- Spotify kapandığında, eklenti kapatıldığında veya yardımcı normal kapandığında eski eşleme geri yüklenir. Bağlantının sessizce kesilmesi 3–4 saniyede anlaşılır. Eklenti yeniden bağlandığında yönlendirme yeniden açılır.
-- Klavye yeniden takılırsa yaklaşık bir saniye içinde yeniden tanınır. Mevcut başka eşlemeler saklanır; başka bir araç sonradan eşlemeyi değiştirirse üzerine yazılmaz.
+- Spotify kapandığında, eklenti kapatıldığında veya yardımcı normal kapandığında eski eşleme geri yüklenir. JavaScript zamanlayıcıları yerine 5 saniyede bir WebSocket protokol ping/pong kontrolü kullanılır; 20 saniye yanıt alınmazsa bağlantı kapanır ve eşleme geri alınır. Eklenti yeniden bağlandığında yönlendirme yeniden açılır.
+- Klavye yeniden takılırsa yaklaşık bir saniye içinde yeniden tanınır. Her taramada yeni bir HID istemcisi kullanılır; çıkarılmış cihazın eski hizmet nesnesi tekrar kullanılmaz. Sistem eşlemeyi kayıtlı başlangıç durumuna döndürürse yeniden uygulanır. Mevcut başka eşlemeler saklanır; başka bir araç sonradan farklı bir eşleme yaparsa üzerine yazılmaz.
 - Erişilebilirlik, Giriş İzleme, yönetici veya Spotify otomasyon izni istemez. Tuş kaydı tutmaz. Yalnızca ayrılmış F20 kısayolunu alır.
 
 ## Kurulan dosyalar
@@ -46,3 +46,7 @@ Yardımcı durur, önceki eşleme geri yüklenir, otomatik başlangıç ve köpr
 6 Kasım 2026: Spotify 1.3.9.2039, Spicetify 2.46.4, SDCX `0816:2474`. Kullanıcı Spotify arka plandayken fiziksel knob'u çevirdi ve 2 saniyelik kısılmayı doğruladı. Oynatıcı ses seviyesi 2002 ms'de sıfıra indi; 2080 ms'de sonraki şarkı eski ses seviyesinde çalıyordu. Yardımcı kapatıldığında her iki HID hizmetindeki eski eşleme geri yüklendi.
 
 Kaynaklar: Apple'ın [cihaza göre tuş eşleme API'si](https://developer.apple.com/library/archive/technotes/tn2450/) ve [WebSocket sunucu el sıkışması](https://developer.apple.com/documentation/network/nwprotocolwebsocket/options/setclientrequesthandler(_:handler:)). Swift kaynak kodu bu klasördedir.
+
+1.2.1 sürümü yeniden bağlantı ve arka plan zaman aşımı sorunlarını düzeltir. `bash macos/test.sh`, arka planda JavaScript bildirimi gelmeden protokol yanıtlarıyla bağlantının korunmasını, gerçek yanıtsız bağlantının kapanmasını ve eşleme sıfırlama/çakışma davranışlarını test eder.
+
+9 Kasım 2026 fiziksel doğrulaması: Spotify simge durumundayken klavye USB'den çıkarılıp yeniden takıldı. Aynı çalışan yardımcı yeni cihaz kimliklerini otomatik eşledi; Spotify bağlantısı kesilmedi. Kullanıcı knob ile 2 saniyelik kısılmayı doğruladı.

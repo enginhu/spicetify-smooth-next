@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1 — 2026-11-09
+
+- Refresh HID clients when enumerating devices, so USB reconnects do not leave stale services that reject all mapping writes.
+- Use native WebSocket ping/pong instead of requiring a JavaScript heartbeat every three seconds; retain knob routing when Spotify's background timers are throttled.
+- Reapply mappings reset to the saved baseline after wake; preserve different mappings made by other tools.
+- Prune disconnected device records and add timestamps and rate limits to mapping error logs.
+- Add 10 native regression checks alongside the 34 JavaScript tests.
+
 ## 1.2.0 — 2026-11-06
 
 - Add an optional per-user macOS companion for the SDCX SIDE-KEYBOARD `0816:2474` Next knob.
